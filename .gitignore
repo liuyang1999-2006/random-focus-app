@@ -1,0 +1,13 @@
+# Node 依赖和构建产物
+node_modules/
+android/.gradle/
+android/build/
+android/app/build/
+android/.idea/
+android/local.properties
+.gradle-home/
+jdk17/
+*.apk
+# 系统文件
+.DS_Store
+Thumbs.db

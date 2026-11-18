@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#216858">
+<title>随机提示音</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root{--bg:#f5f7f3;--surface:#fff;--soft:#eaf1ec;--soft2:#eef2ed;--ink:#19352e;--muted:#73827d;--primary:#216858;--primary2:#174c40;--mint:#dcefe5;--accent:#eda55a;--accent-soft:#fff0df;--line:#e3e9e4;--danger:#a8544d;--shadow:0 12px 36px rgba(25,53,46,.12)}
+*{box-sizing:border-box}body{margin:0;font-family:"Noto Sans CJK SC","Noto Sans SC","Microsoft YaHei",-apple-system,Arial,sans-serif;color:var(--ink);background:#e7ece8;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;border:0;cursor:pointer;background:none;padding:0}
+button:focus-visible,a:focus-visible{outline:3px solid #eda55a;outline-offset:3px}
+#app{max-width:520px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative}
+
+/* ===== 通用组件 ===== */
+.screen{min-height:100vh;display:flex;flex-direction:column}
+.status{height:30px;padding:8px 20px 0;display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700;flex:none;z-index:2}
+.status-icons{display:flex;gap:6px;align-items:center}
+.status svg{display:block}
+.appbar{height:54px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;flex:none}
+.appbar h2{font-size:19px;margin:0;letter-spacing:-.3px}
+.appbar-left{display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{width:34px;height:34px;border-radius:12px;background:var(--primary);display:grid;place-items:center;color:#fff}
+.brand-name{font-size:17px;font-weight:800}
+.icon-btn{width:42px;height:42px;border-radius:14px;background:transparent;display:grid;place-items:center}
+.icon-btn.soft{background:var(--soft)}
+.content{padding:2px 20px 0;flex:1;min-height:0;overflow:hidden}
+.eyebrow{font-size:12px;color:var(--primary);font-weight:700;letter-spacing:.4px}
+.muted{color:var(--muted)}.small{font-size:12px}.tiny{font-size:10px}
+.title{font-size:26px;line-height:1.28;letter-spacing:-.7px;margin:6px 0 5px;font-weight:800}
+.subtitle{font-size:13px;color:var(--muted);line-height:1.6;margin:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:18px}
+.row{display:flex;align-items:center;justify-content:space-between}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;background:var(--mint);color:var(--primary2);font-size:10px;font-weight:700}
+.pill.orange{background:var(--accent-soft);color:#9a5a20}
+.primary-btn{height:54px;width:100%;border-radius:17px;background:var(--primary);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;gap:9px;font-size:15px}
+.primary-btn:active{background:var(--primary2)}
+.text-btn{background:transparent;color:var(--primary);font-weight:700;font-size:13px;padding:12px}
+.secondary-btn{height:48px;border-radius:16px;background:var(--soft);padding:0 18px;font-weight:700}
+.nav{height:76px;flex:none;padding:7px 12px 5px;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,255,255,.96);border-top:1px solid var(--line);z-index:3}
+.nav-item{background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;color:#83908c;font-size:10px}
+.nav-icon{height:30px;min-width:48px;border-radius:16px;display:grid;place-items:center}
+.nav-item.active{color:var(--primary);font-weight:700}
+.nav-item.active .nav-icon{background:var(--mint)}
+.gesture{height:18px;flex:none;display:grid;place-items:center;background:#fff}
+.gesture:after{content:"";width:104px;height:4px;background:#213b34;opacity:.75;border-radius:4px}
+
+/* 首页 */
+.plan-hero{margin-top:16px;padding:19px 19px 17px;background:linear-gradient(145deg,#fff 0%,#f0f7f2 100%)}
+.plan-hero h3{font-size:23px;margin:12px 0 4px;letter-spacing:-.5px}
+.plan-meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+.meta-chip{background:#fff;border:1px solid #dfe9e2;padding:7px 9px;border-radius:11px;font-size:10px;color:#5b7068}
+.start-wrap{margin-top:15px}
+.week-card{margin-top:15px;padding:15px 17px}
+.mini-bars{height:48px;display:flex;align-items:flex-end;gap:6px}
+.mini-bars i{display:block;width:9px;border-radius:5px;background:#c8ddd1}
+.mini-bars i.today{background:var(--primary)}
+.week-value{font-size:23px;font-weight:800;letter-spacing:-.5px}
+.week-value small{font-size:11px;color:var(--muted);font-weight:500}
+.section-title{font-size:14px;font-weight:800;margin:17px 0 10px}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.chip{height:40px;background:#fff;border:1px solid var(--line);border-radius:13px;font-size:12px;font-weight:600}
+.chip.active{background:var(--mint);border-color:#a8cabb;color:var(--primary2)}
+.setting-card{padding:0;overflow:hidden}
+.setting-row{min-height:62px;padding:13px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);background:#fff}
+.setting-row:last-child{border-bottom:0}
+.setting-icon{width:38px;height:38px;flex:none;border-radius:13px;background:var(--soft);display:grid;place-items:center;color:var(--primary)}
+.setting-text{flex:1;min-width:0}
+.setting-text strong{display:block;font-size:13px}
+.setting-text small{display:block;color:var(--muted);font-size:10px;margin-top:4px;line-height:1.4}
+.setting-value{font-size:12px;color:var(--primary);font-weight:700}
+.range-card{margin-top:13px}
+.stepper{display:flex;align-items:center;gap:13px}
+.stepper button{width:36px;height:36px;border-radius:12px;background:var(--soft);font-size:20px;color:var(--primary)}
+.stepper strong{font-size:22px;min-width:24px;text-align:center}
+.range-line{height:5px;background:#dde7e0;border-radius:5px;margin:20px 7px 10px;position:relative}
+.range-line:before{content:"";position:absolute;left:15%;right:24%;height:5px;background:var(--primary);border-radius:5px}
+.range-line i{position:absolute;width:17px;height:17px;background:#fff;border:5px solid var(--primary);border-radius:50%;top:-6px}
+.range-line i:first-child{left:14%}
+.range-line i:last-child{right:23%}
+.range-labels{display:flex;justify-content:space-between;color:var(--muted);font-size:9px}
+.save-bottom{padding:10px 20px 14px;background:linear-gradient(transparent,var(--bg) 20%)}
+
+/* 专注页 */
+.focus-screen{background:#133e34;color:#f5faf6}
+.focus-screen .status{background:#133e34}
+.focus-top{padding:8px 22px;display:flex;justify-content:space-between;align-items:center}
+.focus-top .pill{background:rgba(255,255,255,.1);color:#dce9e3}
+.focus-content{flex:1;padding:0 25px;text-align:center}
+.focus-ring{width:266px;height:266px;margin:17px auto 8px;position:relative;display:grid;place-items:center}
+.focus-ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.focus-ring .ring-fg{transition:stroke-dashoffset .5s linear}
+.focus-time{font-size:55px;font-weight:300;letter-spacing:-2px;line-height:1}
+.focus-time-label{font-size:11px;color:#b8cdc3;margin-top:12px;letter-spacing:1.5px}
+.focus-message{font-size:15px;margin:7px 0 20px}
+.unknown-card{display:flex;align-items:center;gap:12px;text-align:left;background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:14px 15px;color:#e6f0eb}
+.unknown-icon{width:38px;height:38px;border-radius:13px;background:rgba(237,165,90,.16);color:var(--accent);display:grid;place-items:center}
+.unknown-card strong{display:block;font-size:12px}
+.unknown-card small{display:block;font-size:10px;color:#a9c2b7;margin-top:4px}
+.focus-actions{display:grid;grid-template-columns:1.35fr 1fr;gap:11px;margin-top:18px}
+.pause-btn{height:52px;border-radius:17px;background:#e5f1e9;color:#153f34;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px}
+.end-btn{height:52px;border-radius:17px;background:transparent;border:1px solid rgba(255,255,255,.25);color:#d8e6de;font-weight:700}
+.focus-foot{text-align:center;color:#9ab5a9;font-size:10px;padding:10px 20px 12px}
+.focus-screen .gesture{background:#133e34}
+.focus-screen .gesture:after{background:#d7e7df}
+
+/* 微休息 */
+.rest-screen{background:#f8f3e9}
+.rest-screen .status{background:#f8f3e9}
+.rest-content{flex:1;text-align:center;padding:18px 26px}
+.rest-orbit{width:260px;height:260px;margin:28px auto 22px;position:relative;display:grid;place-items:center}
+.rest-orbit:before,.rest-orbit:after{content:"";position:absolute;border-radius:50%;border:1px solid #e6d9c4}
+.rest-orbit:before{inset:0;animation:breathe 4s ease-in-out infinite}
+.rest-orbit:after{inset:25px;background:radial-gradient(circle at 50% 40%,#fffdf8,#f2e5d2);border:0;box-shadow:0 15px 40px rgba(121,93,48,.09)}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.06);opacity:1}}
+.rest-number{z-index:1;font-size:74px;font-weight:300;color:#735f40;line-height:1}
+.rest-number small{display:block;font-size:12px;color:#99866a;margin-top:10px;letter-spacing:2px}
+.rest-content h2{font-size:23px;margin:0 0 9px}
+.rest-content p{font-size:13px;color:#8a7c67;line-height:1.8}
+.rest-progress{height:4px;background:#eadfcd;border-radius:5px;margin:27px 30px 20px;overflow:hidden}
+.rest-progress:after{content:"";display:block;width:0;height:100%;background:#b99865;transition:width .5s linear}
+.rest-skip{background:#fff;border:1px solid #e6dac8;border-radius:15px;height:47px;padding:0 26px;color:#6f624f;font-weight:700}
+.sound-note{font-size:10px;color:#9b8c76;margin-top:18px}
+.rest-screen .gesture{background:#f8f3e9}
+
+/* 长休息 */
+.longrest-screen{background:#eaf2ee}
+.longrest-screen .status{background:#eaf2ee}
+
+/* 统计 */
+.segment{display:grid;grid-template-columns:repeat(3,1fr);padding:4px;background:#e9eeea;border-radius:14px;margin-bottom:12px}
+.segment button{height:34px;background:transparent;border-radius:11px;font-size:12px;color:#73827d}
+.segment button.active{background:#fff;color:var(--primary);font-weight:800;box-shadow:0 2px 7px rgba(20,55,43,.08)}
+.date-nav{display:flex;justify-content:space-between;align-items:center;margin:2px 0 12px;font-size:12px;font-weight:700}
+.date-nav button{background:transparent;color:var(--primary);padding:8px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-card{padding:13px 15px;border-radius:18px}
+.stat-card .label{font-size:10px;color:var(--muted);display:flex;gap:5px;align-items:center}
+.stat-card .value{font-size:24px;font-weight:800;margin-top:7px;letter-spacing:-.6px}
+.stat-card .value small{font-size:11px;font-weight:500;color:var(--muted)}
+.stat-card .delta{font-size:9px;color:var(--primary);margin-top:3px}
+.chart-card{margin-top:11px;padding:14px 15px 12px}
+.chart-head{display:flex;justify-content:space-between;align-items:center}
+.chart-head strong{font-size:12px}
+.chart-head span{font-size:9px;color:var(--primary);background:var(--mint);padding:4px 7px;border-radius:8px}
+.bar-chart{height:112px;display:flex;align-items:flex-end;justify-content:space-between;padding:16px 3px 0;border-bottom:1px solid var(--line);background:repeating-linear-gradient(to bottom,#edf1ed 0,#edf1ed 1px,transparent 1px,transparent 34px)}
+.bar-col{height:100%;width:27px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}
+.bar{width:16px;border-radius:7px 7px 2px 2px;background:#b9d5c5;min-height:5px}
+.bar-col.active .bar{background:var(--primary)}
+.bar-labels{display:flex;justify-content:space-between;padding:7px 5px 0;color:var(--muted);font-size:9px}
+.bar-labels .active{color:var(--primary);font-weight:800}
+.rest-stat{margin-top:11px;padding:13px 15px}
+.progress-track{height:7px;border-radius:7px;background:#e8ede9;overflow:hidden;margin-top:11px}
+.progress-track i{display:block;height:100%;width:0;background:var(--accent);border-radius:7px}
+.dist-card{margin-top:11px;padding:13px 15px}
+.dist-row{display:grid;grid-template-columns:68px 1fr 44px;gap:9px;align-items:center;margin-top:10px;font-size:10px}
+.dist-line{height:6px;background:#e8ede9;border-radius:5px}
+.dist-line i{display:block;height:100%;border-radius:5px;background:var(--primary)}
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty-state h3{color:var(--ink);font-size:17px;margin:0 0 8px}
+.empty-state p{font-size:12px;line-height:1.7;margin:0 0 20px}
+
+/* 记录 */
+.month-summary{padding:15px 17px;background:linear-gradient(135deg,#e2f0e7,#f3f7f3)}
+.month-summary strong{font-size:20px}
+.date-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:14px 0}
+.day-item{text-align:center;font-size:9px;color:var(--muted)}
+.day-item b{display:grid;place-items:center;width:35px;height:38px;margin:5px auto 0;background:#fff;border:1px solid var(--line);border-radius:12px;color:var(--ink);font-size:12px}
+.day-item.active b{background:var(--primary);color:#fff;border-color:var(--primary)}
+.day-item.active{color:var(--primary);font-weight:700}
+.record-date{font-size:12px;font-weight:800;margin:5px 0 9px}
+.record-card{padding:14px 15px;margin-bottom:10px}
+.record-time{font-size:11px;color:var(--muted)}
+.record-card h3{font-size:14px;margin:7px 0}
+.record-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.record-metrics{display:flex;gap:12px;color:var(--muted);font-size:9px}
+.duration{font-size:16px;font-weight:800}
+.record-del{color:var(--danger);font-size:11px;font-weight:700;padding:6px}
+
+/* 音效 */
+.sound-card{padding:14px 15px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.sound-art{width:48px;height:48px;border-radius:16px;background:var(--soft);color:var(--primary);display:grid;place-items:center;flex:none}
+.sound-art.orange{background:var(--accent-soft);color:#ad6a27}
+.sound-art.blue{background:#e6eff4;color:#4a7184}
+.sound-art.purple{background:#eee9f4;color:#79668f}
+.sound-text{flex:1}
+.sound-text strong{display:block;font-size:13px}
+.sound-text small{display:block;font-size:10px;color:var(--muted);margin-top:4px}
+.play-btn{width:40px;height:40px;border-radius:14px;background:var(--soft);display:grid;place-items:center;color:var(--primary)}
+.volume-card{padding:14px 16px;margin-top:13px}
+.volume-slider{height:5px;background:#e4eae5;border-radius:5px;margin:16px 3px 6px;position:relative}
+.volume-slider:before{content:"";position:absolute;width:60%;height:100%;background:var(--primary);border-radius:5px}
+.volume-slider:after{content:"";position:absolute;left:58%;top:-6px;width:17px;height:17px;border-radius:50%;background:#fff;border:5px solid var(--primary)}
+.info-box{display:flex;gap:9px;background:#edf3ee;border-radius:15px;padding:12px 13px;color:#61766d;font-size:10px;line-height:1.6;margin-top:13px}
+
+/* 设置 */
+.group-label{font-size:11px;color:var(--muted);font-weight:700;margin:15px 4px 8px}
+.switch{width:43px;height:25px;border-radius:20px;background:#cdd8d1;padding:3px;flex:none}
+.switch.on{background:var(--primary)}
+.switch:after{content:"";display:block;width:19px;height:19px;border-radius:50%;background:#fff;transition:margin-left .2s}
+.switch.on:after{margin-left:18px}
+.version{text-align:center;color:#96a09c;font-size:9px;margin-top:16px}
+
+/* 弹窗 */
+.modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:50;padding:24px}
+.modal{background:#fff;border-radius:22px;padding:22px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal h3{margin:0 0 8px;font-size:17px}
+.modal p{margin:0 0 18px;font-size:13px;color:var(--muted);line-height:1.6}
+.modal-actions{display:flex;gap:10px}
+.modal-actions button{flex:1;height:48px;border-radius:15px;font-weight:700}
+.modal-cancel{background:var(--soft)}
+.modal-ok{background:var(--primary);color:#fff}
+.modal-danger{background:var(--danger);color:#fff}
+.hidden{display:none!important}
+
+/* 提示条 */
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:rgba(25,53,46,.92);color:#fff;padding:11px 18px;border-radius:14px;font-size:13px;z-index:60;max-width:86%;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast hidden"></div>
+<div id="modalRoot"></div>
+<script>
+/* ================= 图标库 ================= */
+const paths={
+home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M9.5 20v-6h5v6"/>',
+chart:'<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/>',
+list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/>',
+settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.6-1H3v-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.15.36.37.69.66.96.3.28.7.43 1.11.44H21v4h-.09A1.7 1.7 0 0 0 19.4 15Z"/>',
+play:'<path d="m8 5 11 7-11 7Z" fill="currentColor" stroke="none"/>',
+pause:'<path d="M8 5v14M16 5v14" stroke-width="3"/>',
+back:'<path d="m15 18-6-6 6-6"/>',
+chevron:'<path d="m9 18 6-6-6-6"/>',
+left:'<path d="m14 17-5-5 5-5"/>',right:'<path d="m10 17 5-5-5-5"/>',
+wave:'<path d="M3 12h2l2-7 4 14 3-10 3 6 2-3h2"/>',
+clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
+check:'<path d="m5 12 4 4L19 6"/>',
+filter:'<path d="M4 6h16M7 12h10M10 18h4"/>',
+calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+volume:'<path d="M11 5 6 9H3v6h3l5 4Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/>',
+moon:'<path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z"/>',
+shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>',
+battery:'<rect x="3" y="7" width="17" height="10" rx="2"/><path d="M22 10v4M7 10v4M10 10v4"/>',
+info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',
+more:'<circle cx="5" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="19" cy="12" r="1" fill="currentColor"/>',
+plus:'<path d="M12 5v14M5 12h14"/>',minus:'<path d="M5 12h14"/>',
+trash:'<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/>'
+};
+function icon(name,size=20,color='currentColor'){return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]||paths.info}</svg>`}
+
+/* ================= 工具 ================= */
+const $ = (sel,root=document)=>root.querySelector(sel);
+function fmtDur(sec){ sec=Math.max(0,Math.round(sec)); const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60; if(h>0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; return `${m}:${String(s).padStart(2,'0')}`;}
+function fmtDurCN(sec){ sec=Math.max(0,Math.round(sec)); const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60); if(h>0&&m>0) return `${h} 小时 ${m} 分钟`; if(h>0) return `${h} 小时`; if(m>0) return `${m} 分钟`; return '不足 1 分钟';}
+function todayStr(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function pad2(n){return String(n).padStart(2,'0');}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.add('hidden'),2200);}
+function confirmModal(title,desc,okLabel,onOk,danger=false){const root=$('#modalRoot');root.innerHTML=`<div class="modal-mask"><div class="modal"><h3>${title}</h3><p>${desc}</p><div class="modal-actions"><button class="modal-cancel">取消</button><button class="${danger?'modal-danger':'modal-ok'}">${okLabel}</button></div></div></div>`;root.querySelector('.modal-cancel').onclick=closeModal;const okBtn=root.querySelector('.modal-actions button:last-child');okBtn.onclick=()=>{closeModal();onOk();};root.querySelector('.modal-mask').onclick=(e)=>{if(e.target===root.querySelector('.modal-mask'))closeModal();};}
+function closeModal(){$('#modalRoot').innerHTML='';}
+
+/* ================= 音效引擎 (Web Audio 生成四类音效) ================= */
+let actx=null;
+function ensureCtx(){ if(!actx){ actx=new (window.AudioContext||window.webkitAudioContext)(); } if(actx.state==='suspended')actx.resume(); return actx; }
+function tone(freq,dur,{type='sine',vol=0.5,when=0,attack=0.01,release=0.2,decay=1}={}){const ctx=ensureCtx();const t0=ctx.currentTime+when;const o=ctx.createOscillator();const g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t0);g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol,t0+attack);g.gain.exponentialRampToValueAtTime(0.0001,t0+attack+dur*decay+release);o.connect(g);g.connect(ctx.destination);o.start(t0);o.stop(t0+attack+dur*decay+release+0.05);}
+// 1 随机提示：木质轻敲（短促、清脆，短噪声+低频）
+function playCueRandom(v=0.6){ const ctx=ensureCtx(); const t0=ctx.currentTime;
+  // 短噪声木鱼声
+  const buf=ctx.createBuffer(1,ctx.sampleRate*0.08,ctx.sampleRate); const d=buf.getChannelData(0); for(let i=0;i<d.length;i++){d[i]=(Math.random()*2-1)*Math.exp(-i/d.length*8);}
+  const src=ctx.createBufferSource(); src.buffer=buf; const g=ctx.createGain(); g.gain.value=v; const f=ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=2200; f.Q.value=1; src.connect(f); f.connect(g); g.connect(ctx.destination); src.start(t0);
+  tone(880,0.12,{type:'sine',vol:v*0.4,decay:1.5});
+}
+// 2 微休息结束：柔和上行双音
+function playCueMicroEnd(v=0.6){ tone(523.25,0.35,{vol:v*0.5,decay:0.9}); tone(659.25,0.5,{vol:v*0.5,when:0.18,decay:0.9}); }
+// 3 专注完成：上行三音旋律
+function playCueComplete(v=0.6){ tone(523.25,0.35,{vol:v*0.5,decay:0.9}); tone(659.25,0.35,{vol:v*0.5,when:0.18,decay:0.9}); tone(783.99,0.7,{vol:v*0.55,when:0.36,decay:1}); }
+// 4 长休息结束：舒缓收束
+function playCueLongRestEnd(v=0.6){ tone(392,0.6,{vol:v*0.45,decay:1}); tone(329.63,0.8,{vol:v*0.45,when:0.3,decay:1.2}); }
+const SOUNDS={
+  random:{name:'随机提示',sub:'木质轻敲 · 0.8 秒',desc:'清脆短单音',ic:'wave',c:'orange',play:(v)=>playCueRandom(v)},
+  microEnd:{name:'微休息结束',sub:'晨风双音 · 1.2 秒',desc:'柔和上行双音',ic:'bell',c:'',play:(v)=>playCueMicroEnd(v)},
+  complete:{name:'专注完成',sub:'完成三音 · 2.1 秒',desc:'明确上行旋律',ic:'check',c:'blue',play:(v)=>playCueComplete(v)},
+  longRestEnd:{name:'长休息结束',sub:'舒缓收束 · 2.4 秒',desc:'平静收束旋律',ic:'moon',c:'purple',play:(v)=>playCueLongRestEnd(v)}
+};
+function vibrate(ms=200){ if(navigator.vibrate){ try{navigator.vibrate(ms);}catch(e){} } }
+</script>
+<script>
+/* ================= 数据存储 ================= */
+const LS_KEY='rf_settings', LS_REC='rf_records', LS_SESSION='rf_session';
+const DEFAULT_SETTINGS={focusMin:90,minInterval:3,maxInterval:5,microRest:10,longRest:20,volume:0.6,vibration:true};
+function loadSettings(){ try{ const s=JSON.parse(localStorage.getItem(LS_KEY)); return {...DEFAULT_SETTINGS,...(s||{})}; }catch(e){ return {...DEFAULT_SETTINGS}; } }
+function saveSettings(s){ localStorage.setItem(LS_KEY,JSON.stringify(s)); }
+function loadRecords(){ try{ return JSON.parse(localStorage.getItem(LS_REC))||[]; }catch(e){ return []; } }
+function saveRecords(r){ localStorage.setItem(LS_REC,JSON.stringify(r)); }
+function loadSession(){ try{ return JSON.parse(localStorage.getItem(LS_SESSION)); }catch(e){ return null; } }
+function saveSession(s){ if(s) localStorage.setItem(LS_SESSION,JSON.stringify(s)); else localStorage.removeItem(LS_SESSION); }
+
+/* ================= 应用状态 ================= */
+let settings=loadSettings();
+let session=null;       // 当前会话对象
+let page='home';        // 当前页面
+let tickTimer=null;     // 计时循环
+let currentSound=null;  // 正在试听的音效名
+
+function nowSec(){ return Math.floor(Date.now()/1000); }
+
+/* ================= 随机提示引擎 ================= */
+function buildCueSchedule(focusSec,minInt,maxInt){
+  const cues=[]; let cursor=0; let guard=0;
+  while(guard++<10000){
+    const interval=minInt+Math.random()*(maxInt-minInt);
+    const next=cursor+interval;
+    if(next>=focusSec) break;
+    cues.push(next); cursor=next;
+  }
+  return cues;
+}
+
+/* ================= 会话状态机 ================= */
+function startSession(overrides={}){
+  const s={...settings,...overrides};
+  const focusSec=s.focusMin*60;
+  const schedule=buildCueSchedule(focusSec,s.minInterval*60,s.maxInterval*60);
+  session={
+    id:'s'+Date.now(),
+    planName:'默认计划',
+    planSnapshot:{focusMin:s.focusMin,minInterval:s.minInterval,maxInterval:s.maxInterval,microRest:s.microRest,longRest:s.longRest},
+    startedAt:nowSec(),
+    endedAt:null,
+    focusSec:focusSec,
+    activeFocusSec:0,      // 已累计有效专注时长
+    elapsedRealSec:0,      // 墙钟经过（用于单调推进）
+    state:'focusing',       // focusing/paused/microRest/longRest/completed
+    cueSchedule:schedule,
+    cueIndex:0,
+    firedCues:0,
+    microRestDone:0, microRestSkipped:0,
+    microRestRemain:s.microRest,  // 当前微休息剩余
+    longRestRemain:s.longRest*60,
+    lastTick:nowSec()
+  };
+  persistSession();
+}
+function persistSession(){ saveSession(session); }
+function clearSession(){ session=null; saveSession(null); }
+
+/* ================= 计时主循环 ================= */
+function tick(){
+  if(!session) return;
+  const now=nowSec();
+  const dt=now-session.lastTick;
+  session.lastTick=now;
+  if(session.state==='focusing'){
+    // 推进有效专注时长
+    let remaining=session.focusSec-session.activeFocusSec;
+    session.activeFocusSec=Math.min(session.focusSec, session.activeFocusSec+dt);
+    // 检查随机提示点（按有效专注秒数）
+    while(session.cueIndex<session.cueSchedule.length && session.cueSchedule[session.cueIndex] <= session.activeFocusSec){
+      session.cueIndex++;
+      fireCue();
+      return; // 触发微休息后本帧结束
+    }
+    // 专注完成？
+    if(session.activeFocusSec>=session.focusSec){
+      completeFocus();
+      return;
+    }
+  } else if(session.state==='microRest'){
+    session.microRestRemain-=dt;
+    if(session.microRestRemain<=0){ finishMicroRest(); return; }
+  } else if(session.state==='longRest'){
+    session.longRestRemain-=dt;
+    if(session.longRestRemain<=0){ finishLongRest(); return; }
+  }
+  render();
+}
+function startTick(){ stopTick(); tickTimer=setInterval(tick,500); }
+function stopTick(){ if(tickTimer){clearInterval(tickTimer);tickTimer=null;} }
+
+function fireCue(){
+  session.firedCues++;
+  // 进入微休息
+  session.state='microRest';
+  session.microRestRemain=session.planSnapshot.microRest;
+  playCueRandom(settings.volume);
+  if(settings.vibration) vibrate(200);
+  sendNotify('随机提示','该短暂休息一下了，闭眼放松 10 秒');
+  persistSession();
+  render();
+}
+function finishMicroRest(){
+  session.microRestDone++;
+  session.state='focusing';
+  playCueMicroEnd(settings.volume);
+  persistSession();
+  render();
+}
+function skipMicroRest(){
+  session.microRestSkipped++;
+  session.state='focusing';
+  persistSession();
+  render();
+}
+function completeFocus(){
+  session.state='longRest';
+  session.longRestRemain=session.planSnapshot.longRest*60;
+  playCueComplete(settings.volume);
+  if(settings.vibration) vibrate([120,60,120]);
+  sendNotify('专注完成','本轮专注完成，休息一下吧');
+  persistSession();
+  render();
+}
+function finishLongRest(){
+  playCueLongRestEnd(settings.volume);
+  session.state='completed';
+  saveRecord();
+  clearSession();
+  render();
+  confirmModal('本轮完成','计划时长、实际专注等已保存到记录，可到「记录」查看。','好的',()=>{});
+}
+function pauseFocus(){
+  session.state='paused';
+  // 暂停后重新生成后续序列（不补播）
+  const remaining=session.focusSec-session.activeFocusSec;
+  session.cueSchedule=buildCueSchedule(remaining, settings.minInterval*60, settings.maxInterval*60).map(x=>x+session.activeFocusSec);
+  session.cueIndex=0;
+  persistSession(); render();
+}
+function resumeFocus(){
+  session.state='focusing';
+  session.lastTick=nowSec();
+  persistSession(); render();
+}
+function endFocus(){
+  // 二次确认后结束
+  confirmModal('结束专注','结束并保存本次记录？（已专注 '+fmtDurCN(session.activeFocusSec)+'）','结束并保存',()=>{
+    session.state='ended';
+    saveRecord();
+    stopTick();
+    clearSession();
+    page='home';
+    render();
+  },true);
+}
+function saveRecord(){
+  const rec={
+    id:session.id,
+    planName:session.planName,
+    planSnapshot:session.planSnapshot,
+    startedAt:session.startedAt,
+    endedAt:nowSec(),
+    activeFocusSec:Math.round(session.activeFocusSec),
+    status:session.state==='completed'?'completed':(session.state==='ended'?'ended':'failed'),
+    firedCues:session.firedCues,
+    microRestDone:session.microRestDone,
+    microRestSkipped:session.microRestSkipped
+  };
+  const recs=loadRecords(); recs.push(rec); saveRecords(recs);
+}
+function deleteRecord(id){ const recs=loadRecords().filter(r=>r.id!==id); saveRecords(recs); render(); toast('已删除'); }
+
+/* ================= 通知 ================= */
+function sendNotify(title,body){
+  if(!('Notification' in window)) return;
+  if(Notification.permission==='granted'){
+    try{ navigator.serviceWorker.ready.then(reg=>reg.showNotification(title,{body,icon:'icon-192.png',badge:'icon-192.png'})); }catch(e){}
+  }
+}
+function requestNotify(){
+  if(!('Notification' in window)){ toast('此浏览器不支持通知'); return; }
+  Notification.requestPermission().then(p=>{ if(p==='granted') toast('已开启通知，锁屏也能提醒'); else toast('未开启通知，锁屏/后台可能听不到'); render(); });
+}
+
+/* ================= 状态栏 / 导航 组件 ================= */
+function statusBar(dark=false){ const now=new Date(); return `<div class="status"><span>${pad2(now.getHours())}:${pad2(now.getMinutes())}</span><span class="status-icons"><svg width="15" height="12" viewBox="0 0 18 14" fill="${dark?'#fff':'currentColor'}"><path d="M1 13h2V9H1v4Zm4 0h2V6H5v7Zm4 0h2V3H9v10Zm4 0h2V0h-2v13Z"/></svg><svg width="15" height="12" viewBox="0 0 18 14" fill="none" stroke="${dark?'#fff':'currentColor'}" stroke-width="1.7"><path d="M2 5a11 11 0 0 1 14 0M5 8a7 7 0 0 1 8 0M8 11a2.5 2.5 0 0 1 2 0"/></svg><svg width="22" height="11" viewBox="0 0 25 13"><rect x="1" y="1" width="20" height="11" rx="3" fill="none" stroke="${dark?'#fff':'currentColor'}"/><rect x="3" y="3" width="14" height="7" rx="1.5" fill="${dark?'#fff':'currentColor'}"/><path d="M23 5v3" stroke="${dark?'#fff':'currentColor'}" stroke-width="2"/></svg></span></div>`; }
+function gesture(){ return '<div class="gesture"></div>'; }
+function nav(active){ return `<div class="nav">${[['home','专注','home'],['stats','统计','chart'],['records','记录','list'],['settings','设置','settings']].map(([id,label,ic])=>`<button class="nav-item ${active===id?'active':''}" data-nav="${id}"><span class="nav-icon">${icon(ic,20)}</span><span>${label}</span></button>`).join('')}</div>${gesture()}`; }
+function appbar(title,back=false,right=''){ return `<div class="appbar"><div class="appbar-left">${back?`<button class="icon-btn" data-nav="home" aria-label="返回">${icon('back',23)}</button>`:''}<h2>${title}</h2></div>${right}</div>`; }
+
+/* ================= 页面渲染 ================= */
+function render(){
+  const app=$('#app');
+  if(session && (session.state==='focusing'||session.state==='paused'||session.state==='microRest'||session.state==='longRest')){
+    // 有进行中会话，显示专注相关全屏页
+    if(session.state==='microRest') app.innerHTML=renderMicroRest();
+    else if(session.state==='longRest') app.innerHTML=renderLongRest();
+    else app.innerHTML=renderFocus();
+  } else {
+    // 无会话或已结束，显示导航页
+    if(page==='stats') app.innerHTML=renderStats();
+    else if(page==='records') app.innerHTML=renderRecords();
+    else if(page==='settings') app.innerHTML=renderSettings();
+    else if(page==='plan') app.innerHTML=renderPlan();
+    else if(page==='sounds') app.innerHTML=renderSounds();
+    else app.innerHTML=renderHome();
+  }
+  bindEvents();
+}
+
+/* ---- 首页 ---- */
+function renderHome(){
+  const s=settings; const hasRec=loadRecords().length>0;
+  const weekMin=weekFocusMin();
+  return `<div class="screen">${statusBar()}
+  <div class="appbar"><div class="brand"><span class="brand-mark">${icon('wave',21,'#fff')}</span><span class="brand-name">随机提示音</span></div><button class="icon-btn soft" data-nav="settings">${icon('settings',20)}</button></div>
+  <div class="content">
+    <div class="eyebrow" style="margin-top:8px">准备好后，就从这一轮开始</div>
+    <h1 class="title">留一段时间，<br>只给眼前这件事。</h1>
+    <section class="card plan-hero"><div class="row"><span class="pill orange">${icon('bell',12)} 默认计划</span><button class="text-btn" data-nav="plan" style="padding:0">调整 ${icon('chevron',12)}</button></div>
+    <h3>${s.focusMin} 分钟专注</h3><p class="subtitle">每 ${s.minInterval}–${s.maxInterval} 分钟随机响起一次提示音</p>
+    <div class="plan-meta"><span class="meta-chip">${s.microRest} 秒微休息</span><span class="meta-chip">${s.longRest} 分钟长休息</span><span class="meta-chip">4 类独立音效</span></div></section>
+    <div class="start-wrap"><button class="primary-btn" data-start>${icon('play',18)} 开始专注</button></div>
+    <section class="card week-card"><div class="row"><div><div class="small muted">本周有效专注</div><div class="week-value">${weekMin<60?weekMin+' 分钟':Math.floor(weekMin/60)+' 小时 '+(weekMin%60)+' 分钟'}</div></div><div class="mini-bars">${weekBars()}</div></div>
+    <div class="row" style="margin-top:8px"><span class="tiny muted">${hasRec?'完成 '+weekCompletedRounds()+' 轮 · '+weekFocusDays()+' 个专注日':'还没有记录，完成一次专注后出现统计'}</span><button class="text-btn" data-nav="stats" style="padding:0">查看统计 ${icon('chevron',11)}</button></div></section>
+  </div>${nav('home')}</div>`;
+}
+
+/* ---- 计划设置 ---- */
+function renderPlan(){
+  const s=settings;
+  return `<div class="screen">${statusBar()}${appbar('调整计划',true,'<button class="text-btn" data-saveplan>保存</button>')}
+  <div class="content">
+    <div class="section-title" style="margin-top:5px">专注时长</div>
+    <div class="chips">${[15,25,45,60,90,120].map(v=>`<button class="chip ${s.focusMin===v?'active':''}" data-focus="${v}">${v===90?'90 分钟':v+' 分'}</button>`).join('')}</div>
+    <div class="section-title">随机提示区间</div>
+    <section class="card range-card" style="margin-top:0">
+      <div class="row"><div><strong class="small">最小间隔</strong><div class="stepper" style="margin-top:9px"><button data-minint="-1">−</button><strong>${s.minInterval}</strong><span class="small muted">分钟</span><button data-minint="1">＋</button></div></div>
+      <div style="text-align:right"><strong class="small">最大间隔</strong><div class="stepper" style="margin-top:9px"><button data-maxint="-1">−</button><strong>${s.maxInterval}</strong><span class="small muted">分钟</span><button data-maxint="1">＋</button></div></div></div>
+      <div class="range-line"><i></i><i></i></div><div class="range-labels"><span>1 分钟</span><span>提示时间保持未知</span><span>60 分钟</span></div>
+    </section>
+    <div class="section-title">休息节奏</div>
+    <section class="card setting-card">
+      <div class="setting-row" data-micro><span class="setting-icon">${icon('clock',20)}</span><div class="setting-text"><strong>微休息</strong><small>提示后暂停专注计时</small></div><span class="setting-value">${s.microRest} 秒 ${icon('chevron',12)}</span></div>
+      <div class="setting-row" data-longrest><span class="setting-icon">${icon('moon',20)}</span><div class="setting-text"><strong>长休息</strong><small>完成专注后开始</small></div><span class="setting-value">${s.longRest} 分钟 ${icon('chevron',12)}</span></div>
+      <div class="setting-row" data-nav="sounds"><span class="setting-icon">${icon('volume',20)}</span><div class="setting-text"><strong>四类提示音效</strong><small>随机、微休息、完成、休息结束</small></div><span class="setting-value">${icon('chevron',16)}</span></div>
+    </section>
+  </div><div class="save-bottom"><button class="primary-btn" data-saveplan>保存并设为默认</button></div>${gesture()}</div>`;
+}
+
+/* ---- 专注页 ---- */
+function renderFocus(){
+  const s=session; const p=s.planSnapshot;
+  const remain=Math.max(0,s.focusSec-s.activeFocusSec);
+  const progress=s.focusSec>0?s.activeFocusSec/s.focusSec:0;
+  const circ=2*Math.PI*116; const dash=circ*progress;
+  const stateLabel=s.state==='paused'?'已暂停':'专注中';
+  return `<div class="screen focus-screen">${statusBar(true)}
+  <div class="focus-top"><span class="pill"><span style="width:6px;height:6px;border-radius:50%;background:${s.state==='paused'?'#eda55a':'#80c6a7'}"></span>${stateLabel}</span><span class="small" style="color:#b5cbc0">${p.focusMin} 分钟计划</span></div>
+  <div class="focus-content">
+    <div class="focus-ring"><svg viewBox="0 0 266 266"><circle cx="133" cy="133" r="116" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="8"/><circle class="ring-fg" cx="133" cy="133" r="116" fill="none" stroke="#75b89b" stroke-width="8" stroke-linecap="round" stroke-dasharray="${dash} ${circ}"/><circle cx="62" cy="37" r="6" fill="#eda55a"/></svg><div><div class="focus-time">${fmtDur(remain)}</div><div class="focus-time-label">剩余专注时间</div></div></div>
+    <div class="focus-message">${s.state==='paused'?'已暂停，随时继续。':'保持现在的节奏，不必追求完美。'}</div>
+    <div class="unknown-card"><span class="unknown-icon">${icon('wave',21)}</span><div><strong>每 ${p.minInterval}–${p.maxInterval} 分钟随机提示</strong><small>下一次准确时间保持未知</small></div></div>
+    <div class="focus-actions">
+      ${s.state==='paused'?`<button class="pause-btn" data-resume>${icon('play',18)} 继续</button>`:`<button class="pause-btn" data-pause>${icon('pause',18)} 暂停</button>`}
+      <button class="end-btn" data-end>结束</button>
+    </div>
+  </div><div class="focus-foot">已专注 ${fmtDurCN(s.activeFocusSec)} · 提示 ${s.firedCues} 次 · 微休息完成 ${s.microRestDone} 次<br>暂停与微休息均不计入有效专注时长</div>${gesture()}</div>`;
+}
+
+/* ---- 微休息 ---- */
+function renderMicroRest(){
+  return `<div class="screen rest-screen">${statusBar()}
+  <div class="appbar"><span class="pill orange">随机提示已响起</span><span class="small muted">微休息</span></div>
+  <div class="rest-content"><div class="rest-orbit"><div class="rest-number">${Math.max(0,Math.ceil(session.microRestRemain))}<small>秒</small></div></div>
+  <h2>闭上眼睛，放松一下</h2><p>暂时放下屏幕和手头的事，<br>给大脑一点短暂留白。</p>
+  <div class="rest-progress" style="--w:${(1-session.microRestRemain/session.planSnapshot.microRest)*100}%"></div>
+  <button class="rest-skip" data-skip>跳过，返回专注</button><div class="sound-note">结束后播放柔和的“上行双音”</div></div>${gesture()}</div>`;
+}
+
+/* ---- 长休息 ---- */
+function renderLongRest(){
+  return `<div class="screen longrest-screen">${statusBar()}
+  <div class="appbar"><span class="pill">专注已完成</span><span class="small muted">长休息</span></div>
+  <div class="rest-content"><div class="rest-orbit" style="--c:#b99865"><div class="rest-number" style="color:#4a6b5e">${Math.max(0,Math.ceil(session.longRestRemain))}<small>秒</small></div></div>
+  <h2>休息一下</h2><p>本轮专注已完成，<br>给自己一段恢复时间。</p>
+  <div class="rest-progress" style="--w:${(1-session.longRestRemain/(session.planSnapshot.longRest*60))*100}%"></div>
+  <button class="rest-skip" data-finishrest>结束休息</button><div class="sound-note">休息结束后保存记录并回到首页</div></div>${gesture()}</div>`;
+}
+
+/* ---- 统计 ---- */
+let statPeriod='week', statOffset=0;
+function weekFocusMin(){ const recs=loadRecords(); const now=new Date(); const d=new Date(now); const day=(d.getDay()+6)%7; const monday=new Date(d); monday.setDate(d.getDate()-day); monday.setHours(0,0,0,0); const mondayTs=monday.getTime()/1000; return recs.filter(r=>r.endedAt>=mondayTs).reduce((a,r)=>a+(r.activeFocusSec||0),0)/60; }
+function weekCompletedRounds(){ const recs=loadRecords(); const now=new Date(); const d=new Date(now); const day=(d.getDay()+6)%7; const monday=new Date(d); monday.setDate(d.getDate()-day); monday.setHours(0,0,0,0); return recs.filter(r=>r.status==='completed'&&r.endedAt>=monday.getTime()/1000).length; }
+function weekFocusDays(){ const recs=loadRecords(); const now=new Date(); const d=new Date(now); const day=(d.getDay()+6)%7; const monday=new Date(d); monday.setDate(d.getDate()-day); monday.setHours(0,0,0,0); const mondayTs=monday.getTime()/1000; const days=new Set(); recs.filter(r=>r.endedAt>=mondayTs).forEach(r=>days.add(todayStr(new Date(r.endedAt*1000)))); return days.size; }
+function weekBars(){ const recs=loadRecords(); const now=new Date(); const d=new Date(now); const day=(d.getDay()+6)%7; const monday=new Date(d); monday.setDate(d.getDate()-day); monday.setHours(0,0,0,0); const bars=[]; for(let i=0;i<7;i++){ const dayStart=monday.getTime()/1000+i*86400; const dayEnd=dayStart+86400; const mins=recs.filter(r=>r.endedAt>=dayStart&&r.endedAt<dayEnd).reduce((a,r)=>a+(r.activeFocusSec||0),0)/60; const h=Math.min(48,Math.max(4,mins*0.5)); bars.push(`<i class="${i===day?'today':''}" style="height:${h}px"></i>`); } return bars.join(''); }
+function renderStats(){
+  const recs=loadRecords();
+  const totalSec=recs.reduce((a,r)=>a+(r.activeFocusSec||0),0);
+  const completed=recs.filter(r=>r.status==='completed').length;
+  const ended=recs.filter(r=>r.status==='ended').length;
+  const rate=completed+ended>0?Math.round(completed/(completed+ended)*100):null;
+  const microDone=recs.reduce((a,r)=>a+(r.microRestDone||0),0);
+  const microSkipped=recs.reduce((a,r)=>a+(r.microRestSkipped||0),0);
+  const microRate=microDone+microSkipped>0?Math.round(microDone/(microDone+microSkipped)*100):null;
+  // 近7天趋势
+  const now=new Date(); const d=new Date(now); const day=(d.getDay()+6)%7; const monday=new Date(d); monday.setDate(d.getDate()-day); monday.setHours(0,0,0,0);
+  const days=[]; const labels=['一','二','三','四','五','六','日']; let maxMin=1;
+  for(let i=0;i<7;i++){ const ds=monday.getTime()/1000+i*86400, de=ds+86400; const mins=recs.filter(r=>r.endedAt>=ds&&r.endedAt<de).reduce((a,r)=>a+(r.activeFocusSec||0),0)/60; days.push({mins,label:labels[i],i}); maxMin=Math.max(maxMin,mins); }
+  const dist=planDist(recs);
+  return `<div class="screen">${statusBar()}${appbar('统计',false,`<button class="icon-btn soft">${icon('filter',19)}</button>`)}
+  <div class="content"><div class="segment"><button class="${statPeriod==='day'?'active':''}" data-period="day">日</button><button class="${statPeriod==='week'?'active':''}" data-period="week">周</button><button class="${statPeriod==='month'?'active':''}" data-period="month">月</button></div>
+  ${recs.length===0?`<div class="empty-state">${icon('chart',40,'#b6c0bb')}<h3>还没有专注记录</h3><p>完成一次专注后，这里会出现统计</p><button class="primary-btn" data-nav="home" style="max-width:220px;margin:0 auto">${icon('play',18)} 开始专注</button></div>`:`
+  <div class="stats-grid"><section class="card stat-card"><div class="label">${icon('clock',13)} 有效专注</div><div class="value">${fmtDurCN(totalSec)}</div><div class="delta">累计 ${recs.length} 场会话</div></section>
+  <section class="card stat-card"><div class="label">${icon('check',13)} 完成轮数</div><div class="value">${completed}<small> 轮</small></div><div class="delta">完成率 ${rate===null?'--':rate+'%'}</div></section></div>
+  <section class="card chart-card"><div class="chart-head"><strong>近 7 天专注趋势</strong><span>分钟</span></div>
+  <div class="bar-chart">${days.map((d)=>`<div class="bar-col ${d.i===day?'active':''}"><span class="tiny muted">${d.mins>0?Math.round(d.mins):''}</span><i class="bar" style="height:${Math.max(4,d.mins/maxMin*90)}px"></i></div>`).join('')}</div>
+  <div class="bar-labels">${days.map((d)=>`<span class="${d.i===day?'active':''}">${d.label}</span>`).join('')}</div></section>
+  <section class="card rest-stat"><div class="row"><div><strong class="small">微休息完成率</strong><div class="tiny muted" style="margin-top:4px">完成 ${microDone} 次 · 跳过 ${microSkipped} 次</div></div><strong style="font-size:20px">${microRate===null?'--':microRate+'%'}</strong></div><div class="progress-track"><i style="width:${microRate===null?0:microRate}%"></i></div></section>
+  ${dist.length?`<section class="card dist-card"><div class="row"><strong class="small">计划投入分布</strong><span class="tiny muted">时长 / 占比</span></div>${dist.slice(0,5).map((d)=>`<div class="dist-row"><span>${d.name}</span><div class="dist-line"><i style="width:${Math.max(4,d.pct)}%"></i></div><b>${fmtDurCN(d.sec)}</b></div>`).join('')}</section>`:''}
+  `}</div>${nav('stats')}</div>`;
+}
+function planDist(recs){ const map={}; recs.forEach(r=>{ const n=r.planName||'默认计划'; map[n]=(map[n]||0)+(r.activeFocusSec||0); }); const total=Object.values(map).reduce((a,b)=>a+b,0); return Object.entries(map).map(([name,sec])=>({name,sec,pct:total>0?sec/total*100:0})).sort((a,b)=>b.sec-a.sec); }
+
+/* ---- 记录 ---- */
+function renderRecords(){
+  const recs=loadRecords().slice().sort((a,b)=>b.endedAt-a.endedAt);
+  const totalSec=recs.reduce((a,r)=>a+(r.activeFocusSec||0),0);
+  return `<div class="screen">${statusBar()}${appbar('记录',false,`<button class="icon-btn soft">${icon('calendar',19)}</button>`)}
+  <div class="content"><section class="card month-summary"><div class="row"><div><div class="small muted">全部记录</div><strong>${fmtDurCN(totalSec)}</strong></div><span class="pill">${recs.length} 次专注</span></div></section>
+  ${recs.length===0?`<div class="empty-state"><h3>还没有记录</h3><p>完成一次专注后会出现在这里</p></div>`:
+  recs.map(r=>{ const d=new Date(r.endedAt*1000); const st=new Date(r.startedAt*1000); return `<section class="card record-card"><div class="row"><span class="record-time">${pad2(st.getHours())}:${pad2(st.getMinutes())} – ${pad2(d.getHours())}:${pad2(d.getMinutes())} · ${pad2(d.getMonth()+1)}/${pad2(d.getDate())}</span>${r.status==='completed'?'<span class="pill">已完成</span>':'<span class="pill orange">提前结束</span>'}</div><h3>${r.planName}</h3><div class="record-bottom"><div class="record-metrics"><span>${r.firedCues} 次提示</span><span>微休息 ${r.microRestDone}/${r.microRestDone+r.microRestSkipped}</span></div><div style="display:flex;align-items:center;gap:8px"><span class="duration">${fmtDurCN(r.activeFocusSec)}</span><button class="record-del" data-del="${r.id}">${icon('trash',16)}</button></div></div></section>`;}).join('')}
+  </div>${nav('records')}</div>`;
+}
+
+/* ---- 音效设置 ---- */
+function renderSounds(){
+  return `<div class="screen">${statusBar()}${appbar('提示音效',true,'<span class="small muted">独立试听</span>')}
+  <div class="content"><p class="subtitle" style="margin:3px 0 15px">不同场景使用不同节奏和音色，<br>不看屏幕也能知道下一步。</p>
+  ${Object.entries(SOUNDS).map(([k,s])=>`<section class="card sound-card"><span class="sound-art ${s.c}">${icon(s.ic,23)}</span><div class="sound-text"><strong>${s.name}</strong><small>${s.sub}</small><small style="color:var(--primary)">${s.desc}</small></div><button class="play-btn" data-play="${k}">${icon('play',16)}</button></section>`).join('')}
+  <section class="card volume-card"><div class="row"><strong class="small">App 内提示音量</strong><span class="small muted">${Math.round(settings.volume*100)}%</span></div><input type="range" min="0" max="100" value="${Math.round(settings.volume*100)}" id="volRange" style="width:100%;margin-top:12px" data-volume></div>
+  <div class="info-box">${icon('info',17)}<span>“随机”指提示时间随机，同一种场景保持固定音效，帮助建立听觉记忆。</span></div>
+  </div>${gesture()}</div>`;
+}
+
+/* ---- 设置 ---- */
+function renderSettings(){
+  const notifOn='Notification' in window && Notification.permission==='granted';
+  return `<div class="screen">${statusBar()}${appbar('设置')}
+  <div class="content"><div class="group-label" style="margin-top:3px">偏好</div>
+  <section class="card setting-card">
+    <div class="setting-row" data-nav="plan"><span class="setting-icon">${icon('clock',20)}</span><div class="setting-text"><strong>默认计划</strong><small>${settings.focusMin} 分钟 · 每 ${settings.minInterval}–${settings.maxInterval} 分钟随机提示</small></div><span class="setting-value">${icon('chevron',16)}</span></div>
+    <div class="setting-row" data-nav="sounds"><span class="setting-icon">${icon('volume',20)}</span><div class="setting-text"><strong>提示音效</strong><small>四类场景独立设置</small></div><span class="setting-value">${icon('chevron',16)}</span></div>
+    <div class="setting-row"><span class="setting-icon">${icon('moon',20)}</span><div class="setting-text"><strong>外观</strong><small>浅色、深色、跟随系统</small></div><span class="setting-value">跟随系统</span></div>
+  </section>
+  <div class="group-label">通知与后台</div>
+  <section class="card setting-card">
+    <div class="setting-row" data-notify><span class="setting-icon">${icon('bell',20)}</span><div class="setting-text"><strong>锁屏通知提醒</strong><small>${notifOn?'已开启，锁屏/后台会响提示':'未开启，锁屏/后台可能听不到'}</small></div><span class="pill ${notifOn?'':'orange'}">${notifOn?'已开启':'去开启'}</span></div>
+    <div class="setting-row"><span class="setting-icon">${icon('battery',20)}</span><div class="setting-text"><strong>后台运行</strong><small>保持屏幕常亮可获得最佳体验</small></div><span class="setting-value">说明 ${icon('chevron',12)}</span></div>
+  </section>
+  <div class="group-label">数据与支持</div>
+  <section class="card setting-card">
+    <div class="setting-row" data-clear><span class="setting-icon">${icon('shield',20)}</span><div class="setting-text"><strong>本机数据</strong><small>统计离线保存 · 清空所有记录</small></div><span class="setting-value">${icon('chevron',16)}</span></div>
+    <div class="setting-row"><span class="setting-icon">${icon('info',20)}</span><div class="setting-text"><strong>方法说明与关于</strong><small>随机提示音 · V1.0</small></div><span class="setting-value">${icon('chevron',16)}</span></div>
+  </section>
+  <div class="version">随机提示音 · V1.0.0 · 数据仅存本机</div></div>${nav('settings')}</div>`;
+}
+
+/* ================= 事件绑定 ================= */
+function bindEvents(){
+  const app=$('#app');
+  app.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click',()=>{ goPage(el.dataset.nav); }));
+  app.querySelectorAll('[data-start]').forEach(el=>el.addEventListener('click',()=>{ ensureCtx(); startSession(); startTick(); render(); }));
+  app.querySelectorAll('[data-pause]').forEach(el=>el.addEventListener('click',pauseFocus));
+  app.querySelectorAll('[data-resume]').forEach(el=>el.addEventListener('click',resumeFocus));
+  app.querySelectorAll('[data-end]').forEach(el=>el.addEventListener('click',endFocus));
+  app.querySelectorAll('[data-skip]').forEach(el=>el.addEventListener('click',skipMicroRest));
+  app.querySelectorAll('[data-finishrest]').forEach(el=>el.addEventListener('click',finishLongRest));
+  // 计划设置
+  app.querySelectorAll('[data-focus]').forEach(el=>el.addEventListener('click',()=>{ settings.focusMin=parseInt(el.dataset.focus); render(); }));
+  app.querySelectorAll('[data-minint]').forEach(el=>el.addEventListener('click',()=>{ settings.minInterval=Math.max(1,Math.min(30,settings.minInterval+parseInt(el.dataset.minint))); if(settings.maxInterval<=settings.minInterval) settings.maxInterval=settings.minInterval+1; render(); }));
+  app.querySelectorAll('[data-maxint]').forEach(el=>el.addEventListener('click',()=>{ settings.maxInterval=Math.max(2,Math.min(60,settings.maxInterval+parseInt(el.dataset.maxint))); if(settings.maxInterval<=settings.minInterval) settings.minInterval=Math.max(1,settings.maxInterval-1); render(); }));
+  app.querySelectorAll('[data-micro]').forEach(el=>el.addEventListener('click',()=>{ const opts=[5,10,15,20,30,60]; const cur=settings.microRest; const next=opts[(opts.indexOf(cur)+1)%opts.length]; settings.microRest=next; render(); }));
+  app.querySelectorAll('[data-longrest]').forEach(el=>el.addEventListener('click',()=>{ const opts=[5,10,15,20,30,45,60]; const cur=settings.longRest; const next=opts[(opts.indexOf(cur)+1)%opts.length]; settings.longRest=next; render(); }));
+  app.querySelectorAll('[data-saveplan]').forEach(el=>el.addEventListener('click',()=>{ saveSettings(settings); toast('已保存'); goPage('home'); }));
+  // 音效
+  app.querySelectorAll('[data-play]').forEach(el=>el.addEventListener('click',()=>{ const k=el.dataset.play; SOUNDS[k].play(settings.volume); }));
+  const vol=app.querySelector('[data-volume]'); if(vol){ vol.addEventListener('input',()=>{ settings.volume=parseInt(vol.value)/100; saveSettings(settings); }); }
+  // 统计
+  app.querySelectorAll('[data-period]').forEach(el=>el.addEventListener('click',()=>{ statPeriod=el.dataset.period; render(); }));
+  // 记录删除
+  app.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',()=>{ const id=el.dataset.del; confirmModal('删除记录','删除后统计会同步更新，且无法恢复。','删除',()=>deleteRecord(id),true); }));
+  // 设置
+  app.querySelectorAll('[data-notify]').forEach(el=>el.addEventListener('click',requestNotify));
+  app.querySelectorAll('[data-clear]').forEach(el=>el.addEventListener('click',()=>{ confirmModal('清空所有记录','将删除全部专注记录与统计，且无法恢复。','清空',()=>{ saveRecords([]); toast('已清空'); render(); },true); }));
+}
+function goPage(p){
+  // 进行中会话时不离开专注页
+  if(session && (session.state==='focusing'||session.state==='paused'||session.state==='microRest'||session.state==='longRest')){ toast('专注进行中，请先暂停或结束'); return; }
+  page=p; render();
+}
+
+/* ================= 启动 ================= */
+function boot(){
+  // 恢复会话（如有）
+  session=loadSession();
+  if(session){
+    // 恢复时校验：若状态合法则继续计时，否则清掉
+    if(['focusing','paused','microRest','longRest'].includes(session.state)){
+      session.lastTick=nowSec();
+      if(session.state==='focusing'||session.state==='microRest'||session.state==='longRest') startTick();
+    } else { clearSession(); }
+  }
+  render();
+  // 注册 service worker
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+  // 恢复页面时刷新显示
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ if(session) session.lastTick=nowSec(); render(); } });
+}
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "随机提示音",
+  "short_name": "随机提示音",
+  "description": "随机提示音 + 微休息 + 90/20 节奏的极简专注工具",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#133e34",
+  "theme_color": "#216858",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

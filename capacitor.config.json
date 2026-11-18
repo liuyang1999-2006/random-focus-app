@@ -1,0 +1,8 @@
+{
+  "appId": "com.randomfocus.app",
+  "appName": "随机提示音",
+  "webDir": "random-focus-app",
+  "server": {
+    "androidScheme": "https"
+  }
+}
